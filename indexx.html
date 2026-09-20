@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Flexbox Visualizer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #1e1e1e;
+            --panel: #2d2d2d;
+            --accent: #4EC9B0;
+            --text: #d4d4d4;
+        }
+        body.light {
+            --bg: #f5f5f5;
+            --panel: #ffffff;
+            --accent: #007ACC;
+            --text: #333333;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            transition: 0.3s;
+        }
+       .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+        header { grid-column: 1/-1; display: flex; justify-content: space-between; align-items: center; }
+        h1 { color: var(--accent); }
+       .theme-btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+
+       .controls {
+            background: var(--panel);
+            padding: 20px;
+            border-radius: 12px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+       .control-group { margin-bottom: 18px; border-bottom: 1px solid #444; padding-bottom: 15px; }
+       .control-group h4 { color: var(--accent); margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; font-size: 13px; }
+        select, input[type="range"], input[type="color"], input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid #555;
+            border-radius: 5px;
+        }
+        input[type="range"] { cursor: pointer; }
+
+       .preview-area { background: var(--panel); padding: 20px; border-radius: 12px; }
+       .flex-container {
+            display: flex;
+            background: repeating-conic-gradient(#555 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+            min-height: 450px;
+            padding: 10px;
+            transition: 0.2s;
+            border-radius: 8px;
+        }
+       .flex-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+            cursor: move;
+        }
+       .item-controls { margin-top: 10px; display: flex; gap: 5px; }
+       .btn-small { padding: 5px 10px; background: var(--accent); border: none; color: white; border-radius: 4px; cursor: pointer; }
+
+       .code-box {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            position: relative;
+        }
+       .code-box pre { font-family: 'Consolas', monospace; color: var(--accent); white-space: pre-wrap; }
+       .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Flexbox Visualizer</h1>
+            <button class="theme-btn" onclick="toggleTheme()">Dark / Light</button>
+        </header>
+        
+        <div class="controls">
+            <h3>KONTAINER</h3>
+            <div class="control-group">
+                <h4>Layout</h4>
+                <label>flex-direction</label>
+                <select id="flexDirection" onchange="update()"><option>row</option><option>row-reverse</option><option>column</option><option>column-reverse</option></select>
+                
+                <label>justify-content</label>
+                <select id="justifyContent" onchange="update()"><option>flex-start</option><option>center</option><option>flex-end</option><option>space-between</option><option>space-around</option><option>space-evenly</option></select>
+
+                <label>align-items</label>
+                <select id="alignItems" onchange="update()"><option>stretch</option><option>flex-start</option><option>center</option><option>flex-end</option><option>baseline</option></select>
+
+                <label>flex-wrap</label>
+                <select id="flexWrap" onchange="update()"><option>nowrap</option><option>wrap</option><option>wrap-reverse</option></select>
+            </div>
+
+            <div class="control-group">
+                <h4>Odległości</h4>
+                <label>gap: <span id="gapVal">10</span>px</label>
+                <input type="range" id="gap" min="0" max="50" value="10" oninput="update()">
+                
+                <label>padding: <span id="padVal">10</span>px</label>
+                <input type="range" id="padding" min="0" max="50" value="10" oninput="update()">
+            </div>
+
+            <div class="control-group">
+                <h4>Styl Kontenera</h4>
+                <label>Background</label>
+                <input type="color" id="bgColor" value="#252526" oninput="update()">
+                
+                <label>Border</label>
+                <input type="text" id="border" value="2px dashed #555" oninput="update()">
+            </div>
+
+            <h3>ELEMENTY</h3>
+            <div class="control-group">
+                <button class="btn-small" onclick="addItem()">+ Dodaj Element</button>
+                <button class="btn-small" onclick="removeItem()">- Usuń Element</button>
+            </div>
+            
+            <div class="control-group">
+                <h4>Styl Elementów</h4>
+                <label>Kolor tła</label>
+                <input type="color" id="itemBg" value="#667eea" oninput="update()">
+                
+                <label>Tekst</label>
+                <input type="text" id="itemText" value="Element" oninput="update()">
+
+                <label>Font Size: <span id="fsVal">20</span>px</label>
+                <input type="range" id="fontSize" min="12" max="40" value="20" oninput="update()">
+            </div>
+        </div>
+
+        <div class="preview-area">
+            <h3>Podgląd na żywo:</h3>
+            <div class="flex-container" id="flexContainer">
+                <div class="flex-item">1</div>
+                <div class="flex-item">2</div>
+                <div class="flex-item">3</div>
+            </div>
+
+            <div class="code-box">
+                <button class="copy-btn" onclick="copyCode()">Kopiuj CSS</button>
+                <pre id="cssCode"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let itemCount = 3;
+        function update() {
+            const c = document.getElementById('flexContainer');
+            c.style.flexDirection = flexDirection.value;
+            c.style.justifyContent = justifyContent.value;
+            c.style.alignItems = alignItems.value;
+            c.style.flexWrap = flexWrap.value;
+            c.style.gap = gap.value + 'px';
+            c.style.padding = padding.value + 'px';
+            c.style.background = bgColor.value;
+            c.style.border = border.value;
+            gapVal.innerText = gap.value;
+            padVal.innerText = padding.value;
+
+            document.querySelectorAll('.flex-item').forEach((item, i) => {
+                item.style.background = `linear-gradient(135deg, ${itemBg.value} 0%, #764ba2 100%)`;
+                item.innerText = itemText.value + (itemCount > 1 ? ` ${i+1}` : '');
+                item.style.fontSize = fontSize.value + 'px';
+            });
+            fsVal.innerText = fontSize.value;
+
+            cssCode.innerText = `.container {
+  display: flex;
+  flex-direction: ${flexDirection.value};
+  justify-content: ${justifyContent.value};
+  align-items: ${alignItems.value};
+  flex-wrap: ${flexWrap.value};
+  gap: ${gap.value}px;
+  padding: ${padding.value}px;
+  background: ${bgColor.value};
+  border: ${border.value};
+}
+
+.item {
+  background: ${itemBg.value};
+  font-size: ${fontSize.value}px;
+}`;
+        }
+
+        function addItem() { itemCount++; flexContainer.innerHTML += `<div class="flex-item">${itemCount}</div>`; update(); }
+        function removeItem() { if(itemCount > 1) { itemCount--; flexContainer.lastChild.remove(); update(); } }
+        function copyCode() { navigator.clipboard.writeText(cssCode.innerText); alert("Skopiowano!"); }
+        function toggleTheme() { document.body.classList.toggle('light'); }
+        update();
+    </script>
+</body>
+</html>
